@@ -14,3 +14,16 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 .vscode/
+
+*.DS_Store
+.idea
+*.zip
+*.tar.gz
+xray
+mockgen
+vprotogen
+!infra/vprotogen/
+errorgen
+!common/errors/errorgen/
+*.dat
+.vscode
