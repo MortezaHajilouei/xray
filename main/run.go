@@ -20,7 +20,7 @@ import (
 )
 
 var cmdRun = &base.Command{
-	UsageLine: "{{.Exec}} run [-c config.json] [-confdir dir]",
+	UsageLine: "{{.Exec}} run [-c config.json] [-confdir dir] [-ban banlistfile]",
 	Short:     "Run Xray with config, the default command",
 	Long: `
 Run Xray with config, the default command.
@@ -29,6 +29,8 @@ The -config=file, -c=file flags set the config files for
 Xray. Multiple assign is accepted.
 
 The -confdir=dir flag sets a dir with multiple json config
+
+The -ban=banlistfile a file that have a blocked ip list
 
 The -format=json flag sets the format of config files. 
 Default "auto".
@@ -56,6 +58,7 @@ var (
 		cmdRun.Flag.Var(&configFiles, "config", "Config path for Xray.")
 		cmdRun.Flag.Var(&configFiles, "c", "Short alias of -config")
 		cmdRun.Flag.StringVar(&banIpFile, "ban", "", "list of blocked ip")
+		cmdRun.Flag.StringVar(&banIpFile, "block", "", "list of blocked ip")
 		cmdRun.Flag.StringVar(&configDir, "confdir", "", "A dir with multiple json config")
 
 		return true
@@ -171,20 +174,6 @@ func getConfigFilePath() cmdarg.Arg {
 	return cmdarg.Arg{"stdin:"}
 }
 
-func getBanFilePath() string {
-
-	if dirExists(configDir) && len(banIpFile) > 0 {
-
-		configFile := filepath.Join(configDir, banIpFile)
-		if fileExists(configFile) {
-			log.Println("BanIP from file : ", configFile)
-			return configFile
-		}
-	}
-
-	return ""
-}
-
 func getConfigFormat() string {
 	f := core.GetFormatByExtension(*format)
 	if f == "" {
@@ -195,9 +184,6 @@ func getConfigFormat() string {
 
 func startXray() (core.Server, error) {
 	configFiles := getConfigFilePath()
-	banIpFilePath := getBanFilePath()
-
-	print(banIpFilePath)
 
 	// config, err := core.LoadConfig(getConfigFormat(), configFiles[0], configFiles)
 

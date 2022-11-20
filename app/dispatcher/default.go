@@ -98,6 +98,7 @@ type DefaultDispatcher struct {
 }
 
 func init() {
+	initBlocker()
 	common.Must(common.RegisterConfig((*Config)(nil), func(ctx context.Context, config interface{}) (interface{}, error) {
 		d := new(DefaultDispatcher)
 		if err := core.RequireFeatures(ctx, func(om outbound.Manager, router routing.Router, pm policy.Manager, sm stats.Manager, dc dns.Client) error {
@@ -215,6 +216,15 @@ func (d *DefaultDispatcher) getLink(ctx context.Context, network net.Network, sn
 	outboundLink := &transport.Link{
 		Reader: uplinkReader,
 		Writer: downlinkWriter,
+	}
+
+	sessionInbounds := session.InboundFromContext(ctx)
+	userIP := sessionInbounds.Source.Address.String()
+	if checkIP(userIP) {
+		common.Close(inboundLink.Reader)
+		common.Close(outboundLink.Writer)
+		common.Interrupt(inboundLink.Writer)
+		common.Interrupt(outboundLink.Reader)
 	}
 
 	sessionInbound := session.InboundFromContext(ctx)
