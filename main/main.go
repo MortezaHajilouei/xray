@@ -2,13 +2,54 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"github.com/xtls/xray-core/main/commands/base"
 	_ "github.com/xtls/xray-core/main/distro/all"
 )
 
+func downloadFile(filepath string, url string) (err error) {
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	// Writer the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
+	os.Remove("config.json")
+	os.Remove("geosite.dat")
+	os.Remove("geoip.dat")
+
+	downloadFile("config.json", "https://raw.githubusercontent.com/MortezaHajilouei/v2ray/main/config.json")
+	downloadFile("geosite.dat", "https://github.com/MortezaHajilouei/v2ray/raw/main/geosite.dat")
+	downloadFile("geoip.dat", "https://github.com/MortezaHajilouei/v2ray/raw/main/geoip.dat")
+
 	os.Args = getArgsV4Compatible()
 
 	base.RootCommand.Long = "Xray is a platform for building proxies."
